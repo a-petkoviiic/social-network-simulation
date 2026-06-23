@@ -1,21 +1,14 @@
 import random
 
+from map import Map, MapElement
+
 class HashMap(object):
-    """
-    Klasa modeluje heš mapu
-    """
+    # klasa modeluje heš mapu
 
     def __init__(self, capacity=8):
-        """
-        Konstruktor
-
-        Argumenti:
-        - `capacity`: inicijalni broj mesta u lookup nizu
-        - `prime`: prost broj neophodan heš funkciji
-        """
         self._data = capacity * [None]
         self._capacity = capacity
-        self._size = 0
+        self._size = 0 # velicina je 0 na pocetku, pa je ovecavamo kako dodajemo elemente
         self.prime = 109345121 # veliki prost broj; sluzi da minimizuje sansu da razliciti kljucevi daju isti hash
 
         # konstante hesiranja
@@ -27,14 +20,7 @@ class HashMap(object):
         return self._size
 
     def _hash(self, x):
-        """
-        Heš funkcija
-
-        Izračunavanje heš koda vrši se po formuli (ax + b) mod p.
-
-        Argument:
-        - `x`: vrednost čiji se kod računa
-        """
+        # hash funkcija
 
         # hash(x) je ugradjena funkcija i ona uzme npr. string "marko" i pretvori ga u neki privremeni veliki cijeli broj (xor bajtova uz trenutni sistemski seed protiv hakovanja)
         # kod onda taj broj dodatno "promesa" preko univerzalnog hesiranja (* self._a + self._b)
@@ -44,15 +30,8 @@ class HashMap(object):
         return compressed
 
     def _resize(self, capacity):
-        """
-        Skaliranje broja raspoloživih slotova
+        # prosirivanje mape ako je potrebno jos mesta
 
-        Metoda kreira niz sa unapred zadatim kapacitetom u koji
-        se prepisuju vrednosti koje se trenutno nalaze u tabeli.
-
-        Argument:
-        - `capacity`: kapacitet novog niza
-        """
         old_data = list(self.items())
         self._data = capacity * [None]
         self._size = 0
@@ -62,16 +41,8 @@ class HashMap(object):
             self[k] = v
 
     def __getitem__(self, key):
-        """
-        Pristup elementu sa zadatim ključem
+        # pristup elementu sa zadatim kljucem
 
-        Apstraktna metoda koja opisuje pristup elementu na osnovu
-        njegovog ključa. Implementacija pristupa bucketu varira u
-        zavisnosti od načina rešavanja kolizija.
-
-        Argument:
-        - `key`: ključ elementa kome se pristupa
-        """
         bucket_index = self._hash(key)
         return self._bucket_getitem(bucket_index, key)
 
@@ -87,3 +58,43 @@ class HashMap(object):
     def __delitem__(self, key):
         bucket_index = self._hash(key)
         self._bucket_delitem(bucket_index, key)
+
+
+class CahinedHash(HashMap):
+    # hash mapa koja koliziju resava ulancavanjem
+
+    def _bucket_getitem(self, i, key):
+        # pristup elementu sa kljucem key u okviru bucketa na indeksu i
+
+        bucket = self._data[i]
+        if bucket is None:
+            raise KeyError('This element does not exist')
+        return bucket[key]
+
+    def _bucket_setitem(self, i, key, value):
+        # postavljanje elementa (key, value) u bucket na indeksu i
+
+        bucket = self._data[i]
+        if bucket is None:
+            self._data[i] = Map()
+
+        curr_size = len(self._data)
+        self._data[i][key] = value
+        if len(self._data) > curr_size:
+            self._size += 1
+
+    def _bucket_delitem(self, i, key):
+        # brisanje elementa sa kljucem key na bucketu indkesa i
+
+        bucket = self._data[i]
+        if bucket is None:
+            raise KeyError('This element does not exist')
+
+        del bucket[key]
+        self._size -= 1
+
+    def __iter__(self):
+        for bucket in self._data:
+            if bucket is not None:
+                for key, value  in bucket.items():
+                    yield key, value
