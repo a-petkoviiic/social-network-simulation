@@ -1,6 +1,6 @@
 import random
 
-from map import Map, MapElement
+from map import Map
 
 class HashMap(object):
     # klasa modeluje heš mapu
@@ -34,6 +34,7 @@ class HashMap(object):
 
         old_data = list(self.items())
         self._data = capacity * [None]
+        self._capacity = capacity
         self._size = 0
 
         # prepisivanje podataka u novu tabelu
@@ -60,7 +61,7 @@ class HashMap(object):
         self._bucket_delitem(bucket_index, key)
 
 
-class CahinedHash(HashMap):
+class ChainedHashMap(HashMap):
     # hash mapa koja koliziju resava ulancavanjem
 
     def _bucket_getitem(self, i, key):
@@ -78,9 +79,9 @@ class CahinedHash(HashMap):
         if bucket is None:
             self._data[i] = Map()
 
-        curr_size = len(self._data)
+        curr_size = len(self._data[i])
         self._data[i][key] = value
-        if len(self._data) > curr_size:
+        if len(self._data[i]) > curr_size:
             self._size += 1
 
     def _bucket_delitem(self, i, key):
@@ -94,7 +95,15 @@ class CahinedHash(HashMap):
         self._size -= 1
 
     def __iter__(self):
+        bucket: Map
         for bucket in self._data:
             if bucket is not None:
-                for key, value  in bucket.items():
+                for key in bucket:
+                    yield key
+
+    def items(self):
+        bucket: Map
+        for bucket in self._data:
+            if bucket is not None:
+                for key, value in bucket.items():
                     yield key, value
