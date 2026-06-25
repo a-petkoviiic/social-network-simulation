@@ -16,10 +16,9 @@ class SocialGraph(object):
 
         self.page_ranks = dict()
         self.damping = 0.85
-        self.top5_users = []
+        self.top_influencers = []
 
         self.bio_words = dict()
-        self.bio_inverted_index() # odmah popunjavamo recnih sa recima iz biografija
 
 
     # UCITAVANJE PODATAKA IZ FAJLOVA
@@ -75,6 +74,13 @@ class SocialGraph(object):
                     self.blocked_by_others[blocked_id] = set()
                 self.blocked_by_others[blocked_id].add(blocker_id)
 
+    def load_all(self):
+        self.load_users()
+        self.load_connections()
+        self.load_blocked()
+
+        self.bio_inverted_index() # odmah popunjavamo i inverted index hash mapu za bio reci
+
     # ------------------------------------------------------------------------------------------
 
 
@@ -116,27 +122,27 @@ class SocialGraph(object):
             if total_diff < epsilon:
                 print(f"\n{rounds} rundi")
                 self.page_ranks = new_ranks
-                self.top5_users = self.top_heap() # atribut klase dobija vrednost 5 najuticajnijih nakon izracunavanja page ranka
+                self.top_influencers = self.top_heap(self.users) # atribut klase dobija vrednost 5 najuticajnijih nakon izracunavanja page ranka
                 return
 
             old_ranks = new_ranks
             new_ranks = dict()
 
-    def top_heap(self):
+    def top_heap(self, users, n=5):
         heap = [] # cuva top 5 korisnika sa najvecim page rankom (njihove id-jeve)
-        num = 5
 
-        for user_id in self.users:
-            if len(heap) < num:
+        for user_id in users:
+            if len(heap) < n:
                 heapq.heappush(heap, (self.page_ranks[user_id], user_id))
             else:
                 if self.page_ranks[user_id] > heap[0][0]:
                     heapq.heapreplace(heap, (self.page_ranks[user_id], user_id))
 
-        top5_users = sorted(heap, key=lambda x: x[0], reverse=True)
-        return top5_users
+        top= sorted(heap, key=lambda x: x[0], reverse=True)
+        return top
 
     # ------------------------------------------------------------------------------------------
+
 
     # PRETRAGA KORISNIKA
 
@@ -154,23 +160,36 @@ class SocialGraph(object):
                     self.bio_words[word] = set()
                     self.bio_words[word].add(user_id)
 
-    def search_users(self, username_input, bio_input):
-        founded_matches = []
+    def search_users(self, username_input, bio_input, n):
+        founded_matches = set()
+
+        bio_input_words = ''
+        if bio_input != '':
+            bio_input_words = bio_input.strip().lower().split()
 
         for user_id in self.users:
-            if self.users[user_id].username.lower().contains(username_input.strip().lower()):
-                founded_matches.append(user_id)
-        # ovo nije gotova funkcija ne gledaj je
+            bio_match = True
+
+            if not (username_input.strip().lower() == '' or username_input.strip().lower() in self.users[user_id].username.lower()):
+                continue
+
+            if bio_input != '':
+                for word in bio_input_words:
+                    if word not in self.bio_words or user_id not in self.bio_words[word]:
+                        bio_match = False
+                        break
+
+            if bio_match:
+                founded_matches.add(user_id)
+
+        return self.top_heap(founded_matches, n)
 
 
 if __name__ == "__main__":
     import time
 
     graph = SocialGraph()
-
-    graph.load_users()
-    graph.load_connections()
-    graph.load_blocked()
+    graph.load_all()
 
     start = time.time()
     graph.calculate_page_rank()
@@ -179,6 +198,19 @@ if __name__ == "__main__":
     print(f"Vreme racunanja PageRank-a: {end - start:.4f} sekundi")
 
     print("\nTop 5 najuticajnijih korisnika: ")
-    for rank, user_id in graph.top5_users:
+    for rank, user_id in graph.top_influencers:
         username = graph.users[user_id].username
         print(f"\t- {username}: {rank:.6f}")
+
+    username = input("\nUnsetite username za search: ")
+    bio = input("Unsetite bio za search: ")
+
+    search = graph.search_users(username, bio, 5)
+
+    if search:
+        print("Pronadjeni: ")
+        for rank, user_id in graph.search_users(username, bio, 5):
+            username = graph.users[user_id].username
+            print(f"\t- {username}: {rank:.6f}")
+    else:
+        print("Nema pronadjenih")
