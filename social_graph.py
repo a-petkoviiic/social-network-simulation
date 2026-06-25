@@ -1,4 +1,5 @@
 import heapq
+import re
 
 from user import User
 
@@ -7,15 +8,18 @@ class SocialGraph(object):
     def __init__(self):
 
         self.users = dict()
-        self.following = dict()   # korisnik id : izlazne veze (svi koje on prati)  -- PRIVREMENO dict
-        self.followers = dict()   # korisnik id : ulazne veze (svi koji njega prate) -- PRIVREMENO dict
+        self.following = dict()   # korisnik id : izlazne veze (svi koje on prati)
+        self.followers = dict()   # korisnik id : ulazne veze (svi koji njega prate)
 
         self.blocked_by_me = dict() # korisnik id : svi koje je blokirao
         self.blocked_by_others = dict() # korisnik id : svi koji su njega blokirali
 
-        self.page_ranks = dict()  # PRIVREMENO dict
+        self.page_ranks = dict()
         self.damping = 0.85
         self.top5_users = []
+
+        self.bio_words = dict()
+        self.bio_inverted_index() # odmah popunjavamo recnih sa recima iz biografija
 
 
     # UCITAVANJE PODATAKA IZ FAJLOVA
@@ -76,19 +80,6 @@ class SocialGraph(object):
 
     # PAGE RANK
 
-    def top_heap(self):
-        heap = [] # cuva top 5 korisnika sa najvecim page rankom (njihove id-jeve)
-        num = 5
-
-        for user_id in self.users:
-            if len(heap) < num:
-                heapq.heappush(heap, (self.page_ranks[user_id], user_id))
-            else:
-                if self.page_ranks[user_id] > heap[0][0]:
-                    heapq.heapreplace(heap, (self.page_ranks[user_id], user_id))
-
-        self.top5_users = sorted(heap, key=lambda x: x[0], reverse=True)
-
     def calculate_page_rank(self):
         old_ranks = self.page_ranks
         n = len(self.users)
@@ -97,7 +88,7 @@ class SocialGraph(object):
                 self.page_ranks[user_id] = 1 / n # inicijalni page rank, ako je ovo prvi krug racunanja page rankova
 
 
-        new_ranks = dict()  # PRIVREMENO dict -- ovde upisujemo nove vrednosti, pa uporedjujemo sa starima
+        new_ranks = dict()  # ovde upisujemo nove vrednosti, pa uporedjujemo sa starima
 
         x = (1 - self.damping) / n # sabirak koji dodajemo svuda na pocetak
 
@@ -125,13 +116,51 @@ class SocialGraph(object):
             if total_diff < epsilon:
                 print(f"\n{rounds} rundi")
                 self.page_ranks = new_ranks
-                self.top_heap()
+                self.top5_users = self.top_heap() # atribut klase dobija vrednost 5 najuticajnijih nakon izracunavanja page ranka
                 return
 
             old_ranks = new_ranks
             new_ranks = dict()
 
+    def top_heap(self):
+        heap = [] # cuva top 5 korisnika sa najvecim page rankom (njihove id-jeve)
+        num = 5
+
+        for user_id in self.users:
+            if len(heap) < num:
+                heapq.heappush(heap, (self.page_ranks[user_id], user_id))
+            else:
+                if self.page_ranks[user_id] > heap[0][0]:
+                    heapq.heapreplace(heap, (self.page_ranks[user_id], user_id))
+
+        top5_users = sorted(heap, key=lambda x: x[0], reverse=True)
+        return top5_users
+
     # ------------------------------------------------------------------------------------------
+
+    # PRETRAGA KORISNIKA
+
+    def bio_inverted_index(self):
+        for user_id in self.users:
+            bio = self.users[user_id].bio.lower()  # biografija trenutnog korisnika
+            bio_words = bio.split()
+
+            for word in bio_words:
+                word = re.sub(r'[^\w\s]', '', word)  # \w su slova, brojevi i _
+
+                if word in self.bio_words:
+                    self.bio_words[word].add(user_id)
+                else:
+                    self.bio_words[word] = set()
+                    self.bio_words[word].add(user_id)
+
+    def search_users(self, username_input, bio_input):
+        founded_matches = []
+
+        for user_id in self.users:
+            if self.users[user_id].username.lower().contains(username_input.strip().lower()):
+                founded_matches.append(user_id)
+        # ovo nije gotova funkcija ne gledaj je
 
 
 if __name__ == "__main__":
