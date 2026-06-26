@@ -67,6 +67,7 @@ if __name__ == "__main__":
 
             if success:
                 print(f"{graph.users[users_id[0]].username} je zapratio {graph.users[users_id[1]].username}!")
+                ranker.calculate_page_rank()
             else:
                 # vec ispisana poruka zasto u funkciji
                 continue

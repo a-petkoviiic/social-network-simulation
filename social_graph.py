@@ -102,7 +102,7 @@ class SocialGraph(object):
             self.following_history[user1_id] = []
         self.following_history[user1_id].append(user2_id)
 
-        self.calculate_page_rank()
+        # u mainu se poziva racunanje page ranka ponovo nakon uspesno dodate veze
         return True
 
     def user_following_history(self, user_id):
