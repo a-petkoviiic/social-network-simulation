@@ -1,3 +1,5 @@
+from collections import deque
+
 from user import User
 
 class SocialGraph(object):
@@ -113,3 +115,32 @@ class SocialGraph(object):
 
         # u mainu se poziva racunanje page ranka ponovo nakon uspesno dodate veze
         return True
+
+    # bfs:
+
+    def bfs(self, user_id, n):
+        queue = deque()
+        queue.append((user_id, 0))
+        visited = set()
+        visited.add(user_id)
+
+        levels = dict()
+
+        while queue:
+            curr_id, curr_level = queue.popleft()
+
+            if curr_level == n:
+                continue
+
+            for next_id in self.following.get(curr_id, set()):
+                if next_id not in visited:
+                    visited.add(next_id)
+                    next_level = curr_level + 1
+                    queue.append((next_id, next_level))
+
+                    if next_level not in levels:
+                        levels[next_level] = []
+                    levels[next_level].append(next_id)
+
+        return levels
+

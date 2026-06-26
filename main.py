@@ -2,6 +2,39 @@ from social_graph import SocialGraph
 from ranker import Ranker
 from user_search import UserSearch
 
+def from_username_to_id(graph, search, username):
+    if username not in graph.username_to_user:
+        possible = search.did_you_mean(username)
+
+        if possible:
+            print("Did you mean?")
+            for i, name in enumerate(possible, start=1):
+                print(f"{i}) {name}")
+            while True:
+                chosen = input("Unesite broj korisnika kog ste hteli (ili Enter za odustajanje): ")
+
+                if chosen.strip() == "":
+                    print("Odustali ste.\n")
+                    return False
+                elif not chosen.isdigit():
+                    print("Niste uneli ispravan broj.\n")
+                    continue
+                elif int(chosen) < 1 or int(chosen) > len(possible):
+                    print("Broj nije u opsegu ponudjenih opcija.\n")
+                    continue
+                else:
+                    chosen_username = possible[int(chosen) - 1]
+                    chosen_user_id = graph.username_to_user[chosen_username].user_id
+                    return chosen_user_id
+        else:
+            print("Izabrani username ne postoji, kao ni neki njemu slican.\n")
+            return False
+
+    else:
+        chosen_user_id = graph.username_to_user[username].user_id
+        return chosen_user_id
+
+
 if __name__ == "__main__":
     graph = SocialGraph()
     ranker = Ranker(graph)
@@ -18,11 +51,12 @@ if __name__ == "__main__":
               "2) Prikaz top 5 najuticajnijih korisnika\n"
               "3) Dodavanje nove veze praćenja\n"
               "4) Prikaz istorije praćenja\n"
+              "5) Prikaz direktnih i indirektnih konekcija"
               "x za izlaz iz programa")
 
         option = input("\nUnesite broj ispred željene opcije: ")
 
-        if option not in ["1", "2", "3", "4", "x"]:
+        if option not in ["1", "2", "3", "4", "5", "x"]:
             print("Neispravan unos, pokusajte ponovo.\n")
 
         elif option == "1":
@@ -34,11 +68,11 @@ if __name__ == "__main__":
                     print("Neispravan unos, pokusajte ponovo.\n")
                     continue
                 break
-            search = search.search_users(username, bio, int(top_num))
+            results = search.search_users(username, bio, int(top_num))
 
-            if search:
+            if results:
                 print("Pronadjeni: ")
-                for rank, user_id in search:
+                for rank, user_id in results:
                     username = graph.users[user_id].username
                     print(f"\t- {username}: {rank:.6f}")
             else:
@@ -75,34 +109,13 @@ if __name__ == "__main__":
 
         elif option == "4":
             username = input("\nUnesite username korisnika ciju istoriju zelite da pregledate: ")
-            if username not in graph.username_to_user:
-                possible = search.did_you_mean(username)
 
-                if possible:
-                    print("Did you mean?")
-                    for i, name in enumerate(possible, start=1):
-                        print(f"{i}) {name}")
-                    chosen = input("Unesite broj korisnika kog ste hteli (ili Enter za odustajanje): ")
-
-                    if chosen.strip() == "":
-                        print("Odustali ste.\n")
-                        continue
-                    elif not chosen.isdigit():
-                        print("Niste uneli ispravan broj.\n")
-                    elif int(chosen) < 1 or int(chosen) > len(possible):
-                        print("Broj nije u opsegu ponudjenih opcija.\n")
-                    else:
-                        username = possible[int(chosen) - 1]
-
-                else:
-                    print("Izabrani username ne postoji, kao ni neki njemu slican.\n")
-                    continue
-
-            if username not in graph.username_to_user:
+            result = from_username_to_id(graph, search, username)
+            if result is False:
                 continue
-
-            user = graph.username_to_user[username]
-            user_id = user.user_id
+            else:
+                user_id = result
+                user = graph.users[user_id]
 
             if user_id not in graph.following_history:
                 print("U ovoj sesiji ovaj korisnik nije zapratio nikoga.\n")
@@ -111,6 +124,36 @@ if __name__ == "__main__":
             print(f"Hronoloski koga je zapratio korisnik {user.username}:")
             for followed_id in graph.following_history[user_id]:
                 print(f"\t- {graph.users[followed_id].username}")
+
+        elif option == "5":
+            username = input("\nUnesite username korisnika cije konekcije zelite da pregledate: ")
+
+            result = from_username_to_id(graph, search, username)
+            if result is False:
+                continue
+            else:
+                user_id = result
+                user = graph.users[user_id]
+
+            while True:
+                level = input("\nUnesite level: ")
+
+                if not level.isdigit():
+                    print("Neispravan unos, pokusajte ponovo.\n")
+                    continue
+                level = int(level)
+                break
+
+            result_levels = graph.bfs(user_id, level)
+
+            if not result_levels:
+                print("Ovaj korisnik nema konekcija.")
+            else:
+                for l in result_levels.keys():
+                    print(f"Level {l}:")
+                    for connection_user_id in result_levels[l]:
+                        print(f"\t- {graph.users[connection_user_id].username}")
+
 
         elif option == "x":
             print("\nIzlazak iz programa...")
