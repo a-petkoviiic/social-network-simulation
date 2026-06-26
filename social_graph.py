@@ -4,7 +4,8 @@ class SocialGraph(object):
 
     def __init__(self):
 
-        self.users = dict()
+        self.users = dict() # kljucevi su id
+        self.username_to_user = dict()
         self.following = dict()   # korisnik id : izlazne veze (svi koje on prati)
         self.followers = dict()   # korisnik id : ulazne veze (svi koji njega prate)
 
@@ -28,6 +29,7 @@ class SocialGraph(object):
                 user = User(parts[0], parts[1], parts[2])  # id, username, bio
 
                 self.users[user.user_id] = user
+                self.username_to_user[user.username] = user
 
     def load_connections(self):
         with open("dataset/small/connections.txt", "r", encoding="utf-8") as f:
@@ -80,8 +82,15 @@ class SocialGraph(object):
             print("Jedan ili oba korisnika ne postoje.\n")
             return False
 
-        if user2_id in self.following.get(user1_id, set()):
+        if user2_id in self.following.get(user1_id, set()): # ako kljuc ne postoji, tj. ako user1 ne prati nikog jos uvek, vraca se prazan set()
             print("Veza vec postoji.\n")
+            return False
+
+        if user2_id in self.blocked_by_me.get(user1_id, set()): # user 1 blokirao user2
+            print("Izmedju korisnika postoji block! :(\n")
+            return False
+        if user1_id in self.blocked_by_me.get(user2_id, set()): # user2 blokirao user1
+            print("Izmedju korisnika postoji block! :(\n")
             return False
 
         # azuriram following i followers
@@ -104,6 +113,3 @@ class SocialGraph(object):
 
         # u mainu se poziva racunanje page ranka ponovo nakon uspesno dodate veze
         return True
-
-    def user_following_history(self, user_id):
-        return self.following_history[user_id]

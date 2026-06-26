@@ -1,5 +1,5 @@
 import re
-
+import difflib
 
 class UserSearch(object):
     # klasa odgovorna za pretragu korisnika po username-u i po recima iz biografije
@@ -52,3 +52,6 @@ class UserSearch(object):
                 founded_matches.add(user_id)
 
         return self.ranker.top_heap(founded_matches, n)
+
+    def did_you_mean(self, username):
+        return difflib.get_close_matches(username, self.graph.username_to_user.keys(), n=3, cutoff=0.6)

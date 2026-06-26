@@ -72,19 +72,45 @@ if __name__ == "__main__":
                 # vec ispisana poruka zasto u funkciji
                 continue
 
+
         elif option == "4":
-            user_id = input("\nUnesite user_id korisnika ciju istoriju zelite da pregledate: ")
-            if user_id not in graph.users:
-                print("Trazeni korisnik ne postoji.")
-                continue
-            if user_id not in graph.following_history:
-                print("U ovoj sesiji ovaj korisnik nije zapratio nikoga.")
+            username = input("\nUnesite username korisnika ciju istoriju zelite da pregledate: ")
+            if username not in graph.username_to_user:
+                possible = search.did_you_mean(username)
+
+                if possible:
+                    print("Did you mean?")
+                    for i, name in enumerate(possible, start=1):
+                        print(f"{i}) {name}")
+                    chosen = input("Unesite broj korisnika kog ste hteli (ili Enter za odustajanje): ")
+
+                    if chosen.strip() == "":
+                        print("Odustali ste.\n")
+                        continue
+                    elif not chosen.isdigit():
+                        print("Niste uneli ispravan broj.\n")
+                    elif int(chosen) < 1 or int(chosen) > len(possible):
+                        print("Broj nije u opsegu ponudjenih opcija.\n")
+                    else:
+                        username = possible[int(chosen) - 1]
+
+                else:
+                    print("Izabrani username ne postoji, kao ni neki njemu slican.\n")
+                    continue
+
+            if username not in graph.username_to_user:
                 continue
 
-            following_history = graph.following_history[user_id]
-            print(f"Hronoloski prikazano koga je zapraćivao korisnik {graph.users[user_id].username}: ")
-            for user_id in following_history:
-                print(f"\t- {graph.users[user_id].username}")
+            user = graph.username_to_user[username]
+            user_id = user.user_id
+
+            if user_id not in graph.following_history:
+                print("U ovoj sesiji ovaj korisnik nije zapratio nikoga.\n")
+                continue
+
+            print(f"Hronoloski koga je zapratio korisnik {user.username}:")
+            for followed_id in graph.following_history[user_id]:
+                print(f"\t- {graph.users[followed_id].username}")
 
         elif option == "x":
             print("\nIzlazak iz programa...")
