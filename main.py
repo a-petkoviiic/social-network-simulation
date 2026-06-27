@@ -1,3 +1,5 @@
+from multiprocessing.process import active_children
+
 from social_graph import SocialGraph
 from ranker import Ranker
 from user_search import UserSearch
@@ -45,18 +47,24 @@ if __name__ == "__main__":
 
     ranker.calculate_page_rank()
 
+    sim = ranker.bio_similarity(graph, "11")
+    top = sorted(sim.items(), key=lambda kv: kv[1], reverse=True)[:5]
+    for uid, score in top:
+        print(graph.users[uid].username, score)
+
     while True:
         print("\nMeni:")
         print("1) Pretraga korisnika\n"
               "2) Prikaz top 5 najuticajnijih korisnika\n"
               "3) Dodavanje nove veze praćenja\n"
               "4) Prikaz istorije praćenja\n"
-              "5) Prikaz direktnih i indirektnih konekcija"
+              "5) Prikaz direktnih i indirektnih konekcija\n"
+              "6) Prikaz preporuka za datog korisnika\n"
               "x za izlaz iz programa")
 
         option = input("\nUnesite broj ispred željene opcije: ")
 
-        if option not in ["1", "2", "3", "4", "5", "x"]:
+        if option not in ["1", "2", "3", "4", "5", "6", "x"]:
             print("Neispravan unos, pokusajte ponovo.\n")
 
         elif option == "1":
@@ -153,6 +161,56 @@ if __name__ == "__main__":
                     print(f"Level {l}:")
                     for connection_user_id in result_levels[l]:
                         print(f"\t- {graph.users[connection_user_id].username}")
+
+        elif option == "6":
+            username = input("\nUnesite username korisnika cije konekcije zelite da pregledate: ")
+
+            result = from_username_to_id(graph, search, username)
+            if result is False:
+                continue
+            else:
+                user_id = result
+                user = graph.users[user_id]
+
+            while True:
+                alpha = input("Unesite alpha (0 do 1): ")
+
+                try:
+                    alpha = float(alpha)
+                except ValueError:
+                    print("Neispravan unos, pokusajte ponovo.\n")
+                    continue
+
+                if not 0 <= float(alpha) <= 1:
+                    print("Neispravan unos, pokusajte ponovo.\n")
+                    continue
+
+                break
+
+            recommendations = dict()
+            ppr = ranker.calculate_personal_page_rank(user_id)  # jednom
+            sim = ranker.bio_similarity(graph, user_id)
+            for uid in graph.users:
+                score = 0
+                if uid == user_id:
+                    continue
+                if uid in graph.following.get(user_id, set()):  # koga već prati
+                    continue
+                if uid in graph.blocked_by_me.get(user_id, set()):  # koga je blokirao
+                    continue
+                if uid in graph.blocked_by_others.get(user_id, set()):  # ko je blokirao njega
+                    continue
+                else:
+                    score = (alpha * ppr.get(uid, 0) + (1 - alpha) * sim.get(uid, 0))
+                    recommendations[uid] = score
+
+            top_recommendations = ranker.top_heap_recommendations(recommendations)
+            if not top_recommendations:
+                print("Nema preporuka za ovog korisnika.")
+            else:
+                print(f"\nPreporuke za {user.username}:")
+                for score, uid in top_recommendations:
+                    print(f"\t- {graph.users[uid].username}: {score:.6f}")
 
 
         elif option == "x":

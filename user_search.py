@@ -51,7 +51,7 @@ class UserSearch(object):
             if bio_match:
                 founded_matches.add(user_id)
 
-        return self.ranker.top_heap(founded_matches, n)
+        return self.ranker.top_heap_ranks(founded_matches, n)
 
     def did_you_mean(self, username):
         return difflib.get_close_matches(username, self.graph.username_to_user.keys(), n=3, cutoff=0.6)
