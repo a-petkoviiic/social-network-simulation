@@ -31,7 +31,7 @@ class SocialGraph(object):
                 user = User(parts[0], parts[1], parts[2])  # id, username, bio
 
                 self.users[user.user_id] = user
-                self.username_to_user[user.username] = user
+                self.username_to_user[user.username.lower()] = user
 
     def load_connections(self):
         with open("dataset/small/connections.txt", "r", encoding="utf-8") as f:

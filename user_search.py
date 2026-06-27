@@ -1,6 +1,8 @@
 import re
 import difflib
 
+from trie import Trie
+
 class UserSearch(object):
     # klasa odgovorna za pretragu korisnika po username-u i po recima iz biografije
     # koristi inverted index nad bio recima, i Ranker za rangiranje rezultata po PageRank-u
@@ -55,3 +57,9 @@ class UserSearch(object):
 
     def did_you_mean(self, username):
         return difflib.get_close_matches(username, self.graph.username_to_user.keys(), n=3, cutoff=0.6)
+
+    def build_trie(self):
+        trie = Trie()
+        for user in self.graph.users.values():
+            trie.insert(user.username.lower())
+        return trie

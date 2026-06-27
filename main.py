@@ -1,10 +1,9 @@
-from multiprocessing.process import active_children
-
 from social_graph import SocialGraph
 from ranker import Ranker
 from user_search import UserSearch
 
 def from_username_to_id(graph, search, username):
+    username = username.lower()
     if username not in graph.username_to_user:
         possible = search.did_you_mean(username)
 
@@ -26,14 +25,14 @@ def from_username_to_id(graph, search, username):
                     continue
                 else:
                     chosen_username = possible[int(chosen) - 1]
-                    chosen_user_id = graph.username_to_user[chosen_username].user_id
+                    chosen_user_id = graph.username_to_user[chosen_username.lower()].user_id
                     return chosen_user_id
         else:
             print("Izabrani username ne postoji, kao ni neki njemu slican.\n")
             return False
 
     else:
-        chosen_user_id = graph.username_to_user[username].user_id
+        chosen_user_id = graph.username_to_user[username.lower()].user_id
         return chosen_user_id
 
 
@@ -44,13 +43,9 @@ if __name__ == "__main__":
 
     graph.load_all() # podaci iz fajlova
     search.build_inverted_index() # reci iz biografije se pune u inverted index
+    trie = search.build_trie() # odmah od usernama gradiomo trie stablo
 
     ranker.calculate_page_rank()
-
-    sim = ranker.bio_similarity(graph, "11")
-    top = sorted(sim.items(), key=lambda kv: kv[1], reverse=True)[:5]
-    for uid, score in top:
-        print(graph.users[uid].username, score)
 
     while True:
         print("\nMeni:")
@@ -60,11 +55,12 @@ if __name__ == "__main__":
               "4) Prikaz istorije praćenja\n"
               "5) Prikaz direktnih i indirektnih konekcija\n"
               "6) Prikaz preporuka za datog korisnika\n"
+              "7) Autocomplete pretraga po prefiksu\n"
               "x za izlaz iz programa")
 
         option = input("\nUnesite broj ispred željene opcije: ")
 
-        if option not in ["1", "2", "3", "4", "5", "6", "x"]:
+        if option not in ["1", "2", "3", "4", "5", "6", "7", "x"]:
             print("Neispravan unos, pokusajte ponovo.\n")
 
         elif option == "1":
@@ -212,6 +208,22 @@ if __name__ == "__main__":
                 for score, uid in top_recommendations:
                     print(f"\t- {graph.users[uid].username}: {score:.6f}")
 
+        elif option == "7":
+            username = input("\nUnesite username: ").lower()
+            all_usernames = trie.autocomplete(username)
+
+            all_user_id = set()
+            for username in all_usernames:
+                user_id = graph.username_to_user[username].user_id
+                all_user_id.add(user_id)
+
+            completions = ranker.top_heap_ranks(all_user_id)
+            if not completions:
+                print("Nema preporuka za ovog korisnika.")
+            else:
+                print(f"Mozda ste u potrazi za:")
+                for score, uid in completions:
+                    print(f"\t- {graph.users[uid].username}: {score:.6f}")
 
         elif option == "x":
             print("\nIzlazak iz programa...")
