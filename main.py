@@ -41,11 +41,25 @@ if __name__ == "__main__":
     ranker = Ranker(graph)
     search = UserSearch(graph, ranker)
 
-    graph.load_all() # podaci iz fajlova
-    search.build_inverted_index() # reci iz biografije se pune u inverted index
-    trie = search.build_trie() # odmah od usernama gradiomo trie stablo
+    # graph.load_all() # podaci iz fajlova
+    # search.build_inverted_index() # reci iz biografije se pune u inverted index
+    # trie = search.build_trie() # odmah od usernama gradiomo trie stablo
 
+    # ranker.calculate_page_rank()
+
+    import time
+
+    start = time.time()
+    graph.load_all()
+    search.build_inverted_index()
+    trie = search.build_trie()
+    end = time.time()
+    print(f"Vreme učitavanja: {end - start:.3f} sekundi")
+
+    start = time.time()
     ranker.calculate_page_rank()
+    end = time.time()
+    print(f"Vreme PageRank-a: {end - start:.3f} sekundi")
 
     while True:
         print("\nMeni:")

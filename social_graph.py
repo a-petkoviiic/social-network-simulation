@@ -21,7 +21,7 @@ class SocialGraph(object):
 
     def load_users(self):
 
-        with open("dataset/small/users.txt", "r", encoding="utf-8") as f:
+        with open("dataset/full/users.txt", "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if not line:
@@ -34,7 +34,7 @@ class SocialGraph(object):
                 self.username_to_user[user.username.lower()] = user
 
     def load_connections(self):
-        with open("dataset/small/connections.txt", "r", encoding="utf-8") as f:
+        with open("dataset/full/connections.txt", "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if not line:
@@ -53,7 +53,7 @@ class SocialGraph(object):
                 self.followers[followed_id].add(follower_id)
 
     def load_blocked(self):
-        with open("dataset/small/blocked.txt", "r", encoding="utf-8") as f:
+        with open("dataset/full/blocked.txt", "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if not line:

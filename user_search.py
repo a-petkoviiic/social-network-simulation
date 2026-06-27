@@ -53,6 +53,7 @@ class UserSearch(object):
             if bio_match:
                 founded_matches.add(user_id)
 
+        print("DEBUG founded_matches:", founded_matches)
         return self.ranker.top_heap_ranks(founded_matches, n)
 
     def did_you_mean(self, username):
