@@ -1,6 +1,7 @@
 from social_graph import SocialGraph
 from ranker import Ranker
 from user_search import UserSearch
+from user import User
 
 def from_username_to_id(graph, search, username):
     username = username.lower()
@@ -41,40 +42,41 @@ if __name__ == "__main__":
     ranker = Ranker(graph)
     search = UserSearch(graph, ranker)
 
-    # graph.load_all() # podaci iz fajlova
-    # search.build_inverted_index() # reci iz biografije se pune u inverted index
-    # trie = search.build_trie() # odmah od usernama gradiomo trie stablo
+    graph.load_all() # podaci iz fajlova
+    search.build_inverted_index() # reci iz biografije se pune u inverted index
+    trie = search.build_trie() # odmah od usernama gradiomo trie stablo
 
-    # ranker.calculate_page_rank()
-
-    import time
-
-    start = time.time()
-    graph.load_all()
-    search.build_inverted_index()
-    trie = search.build_trie()
-    end = time.time()
-    print(f"Vreme učitavanja: {end - start:.3f} sekundi")
-
-    start = time.time()
     ranker.calculate_page_rank()
-    end = time.time()
-    print(f"Vreme PageRank-a: {end - start:.3f} sekundi")
+
+    # import time
+    #
+    # start = time.time()
+    # graph.load_all()
+    # search.build_inverted_index()
+    # trie = search.build_trie()
+    # end = time.time()
+    # print(f"Vreme učitavanja: {end - start:.3f} sekundi")
+    #
+    # start = time.time()
+    # ranker.calculate_page_rank()
+    # end = time.time()
+    # print(f"Vreme PageRank-a: {end - start:.3f} sekundi")
 
     while True:
         print("\nMeni:")
         print("1) Pretraga korisnika\n"
               "2) Prikaz top 5 najuticajnijih korisnika\n"
               "3) Dodavanje nove veze praćenja\n"
-              "4) Prikaz istorije praćenja\n"
-              "5) Prikaz direktnih i indirektnih konekcija\n"
-              "6) Prikaz preporuka za datog korisnika\n"
-              "7) Autocomplete pretraga po prefiksu\n"
+              "4) Dodavanje novog korisnika\n"
+              "5) Prikaz istorije praćenja\n"
+              "6) Prikaz direktnih i indirektnih konekcija\n"
+              "7) Prikaz preporuka za datog korisnika\n"
+              "8) Autocomplete pretraga po prefiksu\n"
               "x za izlaz iz programa")
 
         option = input("\nUnesite broj ispred željene opcije: ")
 
-        if option not in ["1", "2", "3", "4", "5", "6", "7", "x"]:
+        if option not in ["1", "2", "3", "4", "5", "6", "7", "8", "x"]:
             print("Neispravan unos, pokusajte ponovo.\n")
 
         elif option == "1":
@@ -124,8 +126,41 @@ if __name__ == "__main__":
                 # vec ispisana poruka zasto u funkciji
                 continue
 
-
         elif option == "4":
+            new_username = ''
+
+            while True:
+                username_input = input("\nNovi username: ")
+
+                if username_input == "":
+                    print("Username ne sme biti prazan.")
+                    continue
+                if username_input.lower() in graph.username_to_user:
+                    print("Username nije dostupan. Pokusajte ponovo.")
+                    continue
+
+                new_username = username_input
+                break
+
+            new_bio = input("\nBiografija novog korisnika: ")
+
+            last_id = 0
+            for user_id in graph.users:
+                if int(user_id) > last_id:
+                    last_id = int(user_id)
+            new_id = str(last_id + 1)
+
+            new_user = User(new_id, new_username, new_bio)
+            graph.users[new_id] = new_user
+            graph.username_to_user[new_username.lower()] = new_user
+
+            trie.insert(new_username.lower(), new_id)
+            ranker.calculate_page_rank()
+
+            print(f"Korisnik {new_username} uspešno dodat!")
+
+
+        elif option == "5":
             username = input("\nUnesite username korisnika ciju istoriju zelite da pregledate: ")
 
             result = from_username_to_id(graph, search, username)
@@ -143,7 +178,7 @@ if __name__ == "__main__":
             for followed_id in graph.following_history[user_id]:
                 print(f"\t- {graph.users[followed_id].username}")
 
-        elif option == "5":
+        elif option == "6":
             username = input("\nUnesite username korisnika cije konekcije zelite da pregledate: ")
 
             result = from_username_to_id(graph, search, username)
@@ -172,7 +207,7 @@ if __name__ == "__main__":
                     for connection_user_id in result_levels[l]:
                         print(f"\t- {graph.users[connection_user_id].username}")
 
-        elif option == "6":
+        elif option == "7":
             username = input("\nUnesite username korisnika cije konekcije zelite da pregledate: ")
 
             result = from_username_to_id(graph, search, username)
@@ -222,7 +257,7 @@ if __name__ == "__main__":
                 for score, uid in top_recommendations:
                     print(f"\t- {graph.users[uid].username}: {score:.6f}")
 
-        elif option == "7":
+        elif option == "8":
             username = input("\nUnesite username: ").lower()
             all_usernames = trie.autocomplete(username)
 
