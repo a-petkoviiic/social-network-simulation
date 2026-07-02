@@ -1,3 +1,5 @@
+import re
+
 from social_graph import SocialGraph
 from ranker import Ranker
 from user_search import UserSearch
@@ -142,7 +144,7 @@ if __name__ == "__main__":
                 new_username = username_input
                 break
 
-            new_bio = input("\nBiografija novog korisnika: ")
+            new_bio = input("Biografija novog korisnika: ")
 
             last_id = 0
             for user_id in graph.users:
@@ -154,7 +156,21 @@ if __name__ == "__main__":
             graph.users[new_id] = new_user
             graph.username_to_user[new_username.lower()] = new_user
 
-            trie.insert(new_username.lower(), new_id)
+            # isti deo koda kao u build_inverted_index() da bi se dodali novi korisnikovi bio
+            words = new_bio.lower().split()
+            for word in words:
+                word = re.sub(r'[^\w\s]', '', word)  # \w su slova, brojevi i _
+
+                if not word:
+                    continue
+
+                if word in search.bio_words:
+                    search.bio_words[word].add(new_id)
+                else:
+                    search.bio_words[word] = set()
+                    search.bio_words[word].add(new_id)
+
+            trie.insert(new_username.lower())
             ranker.calculate_page_rank()
 
             print(f"Korisnik {new_username} uspešno dodat!")

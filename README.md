@@ -129,7 +129,22 @@ Unesite novu vezu u formatu follower_id->following_id: 22->113
 Bollywoodxox je zapratio kratos3681!
 ```
 
-### Prikaz istorije praćenja (opcija 4)
+### Dodavanje novog korisnika (opcija 4)
+
+- Dodaje novog korisnika, uz proveru da li je traženi username dostupan;
+nakon uspeha ponovo se računa PageRank, novi username se dodaje u Trie strukturu i 
+dopunjava se inverted index sa rečima iy biografije novog korisnika.
+
+Primer:
+
+```
+Unesite broj ispred željene opcije: 4
+Novi username: testUser
+Biografija novog korisnika: test new words
+Korisnik testUser uspešno dodat!
+```
+
+### Prikaz istorije praćenja (opcija 5)
 
 - Hronološki prikaz korisnika koje je dati korisnik 
 zapratio tokom trenutne sesije.
@@ -137,7 +152,7 @@ zapratio tokom trenutne sesije.
 Primer:
 
 ```
-Unesite broj ispred željene opcije: 4
+Unesite broj ispred željene opcije: 5
 Unesite username korisnika ciju istoriju zelite da pregledate: Bollywoodxo
 Did you mean?
 1) bollywoodxox
@@ -147,14 +162,14 @@ Hronoloski koga je zapratio korisnik Bollywoodxox:
 	- kratos3681
 ```
 
-### Prikaz direktnih i indirektnih konekcija (opcija 5)
+### Prikaz direktnih i indirektnih konekcija (opcija 6)
 
 - BFS od datog korisnika do N nivoa, prikaz po nivoima.
 
 Primer 1: 
 
 ```
-Unesite broj ispred željene opcije: 5
+Unesite broj ispred željene opcije: 6
 Unesite username korisnika cije konekcije zelite da pregledate: cubbybear9
 Unesite level: 2
 Ovaj korisnik nema konekcija.
@@ -163,7 +178,7 @@ Ovaj korisnik nema konekcija.
 Primer 2: 
 
 ```
-Unesite broj ispred željene opcije: 5
+Unesite broj ispred željene opcije: 6
 Unesite username korisnika cije konekcije zelite da pregledate: guimanja
 Unesite level: 1
 Level 1:
@@ -171,7 +186,7 @@ Level 1:
 	- LuiizP
 ```
 
-### Prikaz preporuka za datog korisnika (opcija 6)
+### Prikaz preporuka za datog korisnika (opcija 7)
 
 - Hibridne preporuke: alpha * PPR + (1 - alpha) * Jaccard sličnost biografije, 
 sa filterom (sam korisnik, već zapraćeni, blokirani u oba smera).
@@ -179,7 +194,7 @@ sa filterom (sam korisnik, već zapraćeni, blokirani u oba smera).
 Primer: 
 
 ```
-Unesite broj ispred željene opcije: 6
+Unesite broj ispred željene opcije: 7
 Unesite username korisnika cije konekcije zelite da pregledate: faya0
 Did you mean?
 1) faza01
@@ -194,7 +209,7 @@ Preporuke za faza01:
 	- ttlrere: 0.125165
 ```
 
-### Autocomplete pretraga po prefiksu (opcija 7)
+### Autocomplete pretraga po prefiksu (opcija 8)
 
 - Pretraga korisničkih imena koja počinju datim prefiksom (case-insensitive), pomoću 
 sopstvene Trie implementacije; rezultati sortirani po PageRank vrednosti.
@@ -202,7 +217,7 @@ sopstvene Trie implementacije; rezultati sortirani po PageRank vrednosti.
 Primer: 
 
 ```
-Unesite broj ispred željene opcije: 7
+Unesite broj ispred željene opcije: 8
 Unesite username: le
 Mozda ste u potrazi za:
 	- Lei_Wifey: 0.001875

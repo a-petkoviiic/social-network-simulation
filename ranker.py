@@ -23,6 +23,11 @@ class Ranker(object):
             for user_id in self.graph.users:
                 self.page_ranks[user_id] = 1 / n  # inicijalni page rank, ako je ovo prvi krug racunanja
 
+        # ako dodamo novog korisnika
+        for user_id in self.graph.users:
+            if user_id not in old_ranks:
+                old_ranks[user_id] = 1 / n
+
         new_ranks = dict()  # ovde upisujemo nove vrednosti, pa uporedjujemo sa starima
 
         x = (1 - self.damping) / n  # sabirak koji dodajemo svuda na pocetak
@@ -86,16 +91,6 @@ class Ranker(object):
                     personal_ranks[user_id] = x
                 else:
                     personal_ranks[user_id] = 0
-
-                # # resavanje problema cvorova koji nikog ne prate
-                # sink_ppr = 0.0
-                # for uid in self.graph.users:
-                #     # ako korisnik ne prati nikoga, njegov rank se teleportuje na source_id
-                #     if uid not in self.graph.following or len(self.graph.following[uid]) == 0:
-                #         sink_ppr += old_ranks[uid]
-                #
-                # # dodajemo doprinos slepih ulica direktno na source_id
-                # personal_ranks[source_id] += self.damping * sink_ppr
 
                 # prolazimo kroz sve pratioce, ako trenutni korisnik ima bar jednog pratioca
                 if user_id in self.graph.followers:
